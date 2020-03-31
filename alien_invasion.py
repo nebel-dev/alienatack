@@ -13,7 +13,7 @@ def run_game():
     pg.display.set_caption("Alien Invasion")
 
     # create a ship
-    ship = Ship(screen)
+    ship = Ship(screen, ai_settings)
     # start game loop
     while True:
         # Monitor keyboard and mouse events

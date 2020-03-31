@@ -2,21 +2,31 @@ import sys
 import pygame as pg
 
 
+def check_keydown_events(event, ship):
+    """Response button"""
+    if event.key == pg.K_RIGHT:
+        ship.movement_right = True
+    elif event.key == pg.K_LEFT:
+        ship.movement_left = True
+
+
+def check_keyup_events(event, ship):
+    """Response loosening"""
+    if event.key == pg.K_RIGHT:
+        ship.movement_right = False
+    elif event.key == pg.K_LEFT:
+        ship.movement_left = False
+
+
 def check_events(ship):
     """Monitor keyboard and mouse events"""
     for event in pg.event.get():
         if event.type == pg.QUIT:
             sys.exit()
         elif event.type == pg.KEYDOWN:
-            if event.key == pg.K_RIGHT:
-                ship.movement_right = True
-            elif event.key == pg.K_LEFT:
-                ship.movement_left = True
+            check_keydown_events(event, ship)
         elif event.type == pg.KEYUP:
-            if event.key == pg.K_RIGHT:
-                ship.movement_right = False
-            elif event.key == pg.K_LEFT:
-                ship.movement_left = False
+            check_keyup_events(event, ship)
 
 
 def update_screen(ai_settings, screen, ship):
