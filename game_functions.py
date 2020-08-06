@@ -38,9 +38,10 @@ def update_screen(ai_settings, screen, ship, bullets):
     """Update image on screen and switch to new screen"""
     # redraw the screen every time you circle
     screen.fill(ai_settings.bg_color)
-    ship.blitme()
+
     # Redraw all the bullets behind the ship and the alien
     for bullet in bullets.sprites():
         bullet.draw_bullet()
+    ship.blitme()
     # Make the most recently drawn screen visible
     pg.display.flip()
