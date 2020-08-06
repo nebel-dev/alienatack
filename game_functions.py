@@ -11,8 +11,7 @@ def check_keydown_events(event, ship, ai_settings, screen, bullets):
         ship.movement_left = True
     elif event.key == pg.K_SPACE:
         # Create a bullet and add it to the group bullets
-        new_bullet = Bullet(ai_settings, screen, ship)
-        bullets.add(new_bullet)
+        fire_bullet(ai_settings, screen, ship, bullets)
 
 
 def check_keyup_events(event, ship):
@@ -45,3 +44,20 @@ def update_screen(ai_settings, screen, ship, bullets):
     ship.blitme()
     # Make the most recently drawn screen visible
     pg.display.flip()
+
+
+def update_bullets(bullets):
+    """update position of bullets and delete lost bullets"""
+    # update position of bullets
+    bullets.update()
+
+    # delete lost bullets
+    for bullet in bullets.copy():
+        if bullet.rect.bottom <= 0:
+            bullets.remove(bullet)
+
+
+def fire_bullet(ai_settings, screen, ship, bullets):
+    if len(bullets) < ai_settings.bullets_allowed:
+        new_bullet = Bullet(ai_settings, screen, ship)
+        bullets.add(new_bullet)
