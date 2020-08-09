@@ -12,6 +12,8 @@ def check_keydown_events(event, ship, ai_settings, screen, bullets):
     elif event.key == pg.K_SPACE:
         # Create a bullet and add it to the group bullets
         fire_bullet(ai_settings, screen, ship, bullets)
+    elif event.key ==pg.K_q:
+        sys.exit()
 
 
 def check_keyup_events(event, ship):
@@ -33,7 +35,7 @@ def check_events(ship, ai_settings, screen, bullets):
             check_keyup_events(event, ship)
 
 
-def update_screen(ai_settings, screen, ship, bullets):
+def update_screen(ai_settings, screen, ship, alien, bullets):
     """Update image on screen and switch to new screen"""
     # redraw the screen every time you circle
     screen.fill(ai_settings.bg_color)
@@ -42,6 +44,7 @@ def update_screen(ai_settings, screen, ship, bullets):
     for bullet in bullets.sprites():
         bullet.draw_bullet()
     ship.blitme()
+    alien.blitme()
     # Make the most recently drawn screen visible
     pg.display.flip()
 
@@ -61,3 +64,5 @@ def fire_bullet(ai_settings, screen, ship, bullets):
     if len(bullets) < ai_settings.bullets_allowed:
         new_bullet = Bullet(ai_settings, screen, ship)
         bullets.add(new_bullet)
+
+
