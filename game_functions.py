@@ -26,7 +26,7 @@ def check_keyup_events(event, ship):
         ship.movement_left = False
 
 
-def check_events(ship, ai_settings, screen, bullets):
+def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets):
     """Monitor keyboard and mouse events"""
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -35,9 +35,27 @@ def check_events(ship, ai_settings, screen, bullets):
             check_keydown_events(event, ship, ai_settings, screen, bullets)
         elif event.type == pg.KEYUP:
             check_keyup_events(event, ship)
+        elif event.type == pg.MOUSEBUTTONDOWN:
+            mouse_x, mouse_y = pg.mouse.get_pos()
+            check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y)
 
 
-def update_screen(ai_settings, screen, ship, aliens, bullets):
+def check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y):
+    """play game when player click play button"""
+    if play_button.rect.collidepoint(mouse_x, mouse_y) and not stats.game_active:
+        pg.mouse.set_visible(False)
+        # reset game statistics
+        stats.reset_stats()
+        stats.game_active = True
+        # 清空外星人列表和子弹列表
+        aliens.empty()
+        bullets.empty()
+        # 创建一群新的外星人,并让飞船居中
+        create_fleet(ai_settings, screen, ship, aliens)
+        ship.center_ship()
+
+
+def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button):
     """Update image on screen and switch to new screen"""
     # redraw the screen every time you circle
     screen.fill(ai_settings.bg_color)
@@ -47,6 +65,9 @@ def update_screen(ai_settings, screen, ship, aliens, bullets):
         bullet.draw_bullet()
     ship.blitme()
     aliens.draw(screen)
+    # 如果游戏处于非活动状态,就绘制 Play 按钮
+    if not stats.game_active:
+        play_button.draw_button()
     # Make the most recently drawn screen visible
     pg.display.flip()
 
@@ -163,6 +184,7 @@ def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
         sleep(0.5)
     else:
         stats.game_active = False
+        pg.mouse.set_visible(True)
 
 
 def check_alien_bottom(ai_settings, stats, screen, ship, aliens, bullets):
@@ -173,6 +195,3 @@ def check_alien_bottom(ai_settings, stats, screen, ship, aliens, bullets):
             # like collisions between aliens and ship
             ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
             break
-
-
-
