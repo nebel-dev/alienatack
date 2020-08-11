@@ -26,7 +26,7 @@ def check_keyup_events(event, ship):
         ship.movement_left = False
 
 
-def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets):
+def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets):
     """Monitor keyboard and mouse events"""
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -37,27 +37,35 @@ def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets)
             check_keyup_events(event, ship)
         elif event.type == pg.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pg.mouse.get_pos()
-            check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y)
+            check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets, mouse_x, mouse_y)
 
 
-def check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y):
+def check_play_button(ai_settings, screen, stats, sb, play_button, ship, aliens, bullets, mouse_x, mouse_y):
     """play game when player click play button"""
     if play_button.rect.collidepoint(mouse_x, mouse_y) and not stats.game_active:
         # reset settings in the last round of the game have changed
         ai_settings.initialize_dynamic_settings()
         pg.mouse.set_visible(False)
+
         # reset game statistics
         stats.reset_stats()
         stats.game_active = True
+
+        # reset scoreboard image
+        sb.prep_score()
+        sb.prep_high_score()
+        sb.prep_level()
+        sb.prep_ships()
         # 清空外星人列表和子弹列表
         aliens.empty()
         bullets.empty()
+
         # 创建一群新的外星人,并让飞船居中
         create_fleet(ai_settings, screen, ship, aliens)
         ship.center_ship()
 
 
-def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button):
+def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets, play_button):
     """Update image on screen and switch to new screen"""
     # redraw the screen every time you circle
     screen.fill(ai_settings.bg_color)
@@ -67,6 +75,8 @@ def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button
         bullet.draw_bullet()
     ship.blitme()
     aliens.draw(screen)
+    # showing score
+    sb.show_score()
     # 如果游戏处于非活动状态,就绘制 Play 按钮
     if not stats.game_active:
         play_button.draw_button()
@@ -74,7 +84,7 @@ def update_screen(ai_settings, screen, stats, ship, aliens, bullets, play_button
     pg.display.flip()
 
 
-def update_bullets(ai_settings, screen, ship, aliens, bullets):
+def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
     """update position of bullets and delete lost bullets"""
     # update position of bullets
     bullets.update()
@@ -84,18 +94,26 @@ def update_bullets(ai_settings, screen, ship, aliens, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
 
-    check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets)
+    check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets)
 
 
-def check_bullet_alien_collisions(ai_settings, screen, ship, aliens, bullets):
+def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets):
     # check to see if any bullet hit the alien
     # if so, delete the corresponding bullet and alien
     collisions = pg.sprite.groupcollide(bullets, aliens, True, True)
+    if collisions:
+        for aliens in collisions.values():
+            stats.score += ai_settings.alien_point * len(aliens)
+            sb.prep_score()
+        check_high_score(stats, sb)
 
     if len(aliens) == 0:
         # delete existing bullets and create a new group of aliens
         bullets.empty()
         ai_settings.increase_speed()
+        # increase level
+        stats.level += 1
+        sb.prep_level()
         create_fleet(ai_settings, screen, ship, aliens)
 
 
@@ -157,23 +175,23 @@ def change_fleet_direction(ai_settings, aliens):
     ai_settings.fleet_direction *= -1
 
 
-def update_aliens(ai_settings, stats, screen, ship, aliens, bullets):
+def update_aliens(ai_settings, stats, sb, screen, ship, aliens, bullets):
     """update aliens position"""
     check_fleet_edges(ai_settings, aliens)
     aliens.update()
 
     # checking collisions between aliens and ship
     if pg.sprite.spritecollideany(ship, aliens):
-        ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
-        print(" WTF !!! ")
+        ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets)
 
-    check_alien_bottom(ai_settings, stats, screen, ship, aliens, bullets)
+    check_alien_bottom(ai_settings, stats, sb, screen, ship, aliens, bullets)
 
 
-def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
+def ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets):
     """responding to ship hit by aliens"""
     if stats.ships_left > 0:
         stats.ships_left -= 1
+        sb.prep_ships()
 
         # clear alien list and bullet list
         aliens.empty()
@@ -190,11 +208,18 @@ def ship_hit(ai_settings, stats, screen, ship, aliens, bullets):
         pg.mouse.set_visible(True)
 
 
-def check_alien_bottom(ai_settings, stats, screen, ship, aliens, bullets):
+def check_alien_bottom(ai_settings, stats, sb, screen, ship, aliens, bullets):
     """check if any aliens arrive at bottom of screen"""
     screen_rect = screen.get_rect()
     for alien in aliens.sprites():
         if alien.rect.bottom >= screen_rect.bottom:
             # like collisions between aliens and ship
-            ship_hit(ai_settings, stats, screen, ship, aliens, bullets)
+            ship_hit(ai_settings, stats, sb, screen, ship, aliens, bullets)
             break
+
+
+def check_high_score(stats, sb):
+    """check if a new high score """
+    if stats.score > stats.high_score:
+        stats.high_score = stats.score
+        sb.prep_high_score()
